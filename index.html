@@ -8,41 +8,71 @@
       overflow: hidden;
     }
 
-    /* canvas {
-      width: 800px;
-      height: 800px;
+    canvas {
       border: 2px solid black;
-    } */
+    }
   </style>
 </head>
 
 <body>
-  <!-- <canvas id="canvas"></canvas> -->
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
+  <script type="application/javascript">
+    (function () {
+      var lastTime = 0;
+      var vendors = ['ms', 'moz', 'webkit', 'o'];
+      for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame']
+          || window[vendors[x] + 'CancelRequestAnimationFrame'];
+      }
 
+      if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function (callback, element) {
+          var currTime = new Date().getTime();
+          var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+          var id = window.setTimeout(function () { callback(currTime + timeToCall); },
+            timeToCall);
+          lastTime = currTime + timeToCall;
+          return id;
+        };
 
-    GameCanvas = (function () {
-      /*
-        Constructor
-      */
-      function GameCanvas(canvas) {
+      if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function (id) {
+          clearTimeout(id);
+        };
+    }());
+  </script>
+  <script type="application/javascript" src="/socket.io/socket.io.js"></script>
+  <script type="application/javascript">
+    Renderer = (function () {
+      function Renderer(canvas) {
         var ratio = window.innerWidth < window.innerHeight ?
-          window.innerWidth : window.innerHeight;
+          window.innerWidth - 20 : window.innerHeight - 20;
         this.canvas = canvas;
         this.canvas.width = this.canvas.height = ratio;
         this.context = this.canvas.getContext('2d');
-        this.gridSize = 80;
+        this.gridSize = 100;
         this.cellSize = ratio / this.gridSize;
       }
 
-      GameCanvas.prototype.draw = function (state) {
+      Renderer.prototype.draw = function (state) {
         var context = this.context;
         var cellSize = this.cellSize;
 
-        // Render background
         this.context.fillStyle = "#fff";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (state.state == 'idle') {
+          context.font = "30px Arial";
+          context.fillStyle = 'Black';
+          context.textAlign = 'center';
+          context.fillText("Waiting...", this.canvas.width / 2, this.canvas.height / 2);
+        }
+        else if (state.state == 'preparing') {
+          context.font = "30px Arial";
+          context.fillStyle = 'Black';
+          context.textAlign = 'center';
+          context.fillText("Get ready!", this.canvas.width / 2, this.canvas.height / 2);
+        }
 
         state.players.forEach((p) => {
           context.fillStyle = p.color;
@@ -55,25 +85,25 @@
         });
       }
 
-      return GameCanvas;
+      return Renderer;
     })();
 
     var socket = io();
-    // var canvas = document.getElementById('canvas');
+
     var canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
 
-    var game = new GameCanvas(canvas);
+    var renderer = new Renderer(canvas);
 
     document.onkeydown = (ev) => {
       socket.emit('key', ev.keyCode);
-    }
+    };
 
+    // todo separate getting data and drawing
     socket.on('state', (data) => {
-      // todo remove
-      console.log(JSON.stringify(data));
-
-      game.draw(data);
+      console.log(data.state);
+      console.log(data.players);
+      renderer.draw(data);
     });
 
   </script>

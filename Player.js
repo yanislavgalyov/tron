@@ -18,6 +18,24 @@ class Player {
     this.dir = options.dir;
     this.color = options.color;
     this.score = 0;
+    this.isAlive = true;
+
+    this.initialX = this.x;
+    this.initialY = this.y;
+  }
+
+  respawn() {
+    this.x = this.initialX;
+    this.y = this.initialY;
+    this.isAlive = true;
+  }
+
+  win() {
+    this.score += 1;
+  }
+
+  crash() {
+    this.isAlive = false;
   }
 
   leaveTrail() {
