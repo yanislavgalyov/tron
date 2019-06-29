@@ -1,3 +1,5 @@
+"use strict";
+
 const Directions = {
   up: 'up',
   right: 'right',

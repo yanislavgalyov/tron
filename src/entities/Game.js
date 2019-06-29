@@ -15,9 +15,9 @@ class Game {
   constructor(io) {
     this.io = io;
     this.gridSize = 100;
-    this.shouldSendUpdate = false;
 
     this.players = {};
+    this.observers = [];
     this.obstacles = [];
 
     this.innerState = new StateMachine({
@@ -33,7 +33,9 @@ class Game {
           this.reset();
           this.lastUpdateTime = Date.now();
         },
-        onPlay: () => { console.log('onPlay'); },
+        onPlay: () => {
+          console.log('onPlay');
+        },
         onReset: () => {
           this.reset();
           console.log('onReset');
@@ -45,7 +47,7 @@ class Game {
       }
     });
 
-    setInterval(this.update.bind(this), 200);
+    setInterval(this.update.bind(this), 100);
   }
 
   generateColor() {
@@ -62,7 +64,7 @@ class Game {
   }
 
   addPlayer(id) {
-    if (this.innerState.state == 'idle') {
+    if (this.innerState.state === 'idle') {
       this.players[id] = new Player({
         id: id,
         x: this.random(10, 90),
@@ -74,6 +76,8 @@ class Game {
       if (Object.keys(this.players).length > 1) {
         this.innerState.start();
       }
+    } else {
+      this.observers.push(id);
     }
   }
 
@@ -82,6 +86,11 @@ class Game {
 
     if (Object.keys(this.players).length < 2) {
       this.innerState.stop();
+
+      const nextObserver = this.observers.shift();
+      if (nextObserver) {
+        this.addPlayer(nextObserver);
+      }
     }
   }
 
@@ -100,11 +109,11 @@ class Game {
       }
     }
 
-    if (winners.length == 1) {
+    if (winners.length === 1) {
       this.players[winners[0]].win();
       this.innerState.reset();
     }
-    else if (winners.length == 0) {
+    else if (winners.length === 0) {
       this.innerState.reset();
     }
   }
@@ -116,18 +125,18 @@ class Game {
       if (player.x < 0 || player.x >= this.gridSize || player.y < 0 || player.y >= this.gridSize) {
         player.crash();
       }
-      else if (this.obstacles.some(e => e.x == player.x && e.y == player.y)) {
+      else if (this.obstacles.some(e => e.x === player.x && e.y === player.y)) {
         player.crash();
       }
       else {
         for (const k2 in this.players) {
-          if (k2 == k1) {
+          if (k2 === k1) {
             continue;
           }
 
           const anotherPlayer = this.players[k2];
 
-          if (player.x == anotherPlayer.x && player.y == anotherPlayer.y) {
+          if (player.x === anotherPlayer.x && player.y === anotherPlayer.y) {
             player.crash();
           }
         }
@@ -136,8 +145,8 @@ class Game {
   }
 
   reset() {
-    for (const k1 in this.players) {
-      const player = this.players[k1];
+    for (const k in this.players) {
+      const player = this.players[k];
       player.respawn();
     }
 
@@ -149,29 +158,27 @@ class Game {
     const dt = (now - this.lastUpdateTime) / 1000;
     this.lastUpdateTime = now;
 
-    if (this.innerState.state == 'preparing') {
+    if (this.innerState.state === 'preparing') {
       this.temp = (this.temp || 0) + dt;
-      console.log(this.temp);
       if (this.temp > 3) {
         this.temp = 0;
         this.innerState.play();
       }
     }
-    else if (this.innerState.state == 'busy') {
+    else if (this.innerState.state === 'busy') {
+      for (const k in this.players) {
+        const player = this.players[k];
 
-      Object.keys(this.players).forEach(k => {
-        if (this.players[k].isAlive) {
-          const obstacle = this.players[k].leaveTrail();
-          this.obstacles.push(obstacle);
-          this.players[k].move();
-        }
-      });
+        const obstacle = player.leaveTrail();
+        this.obstacles.push(obstacle);
+
+        player.move();
+      }
 
       this.checkCollision();
       this.checkWin();
     }
 
-    // if (this.shouldSendUpdate) {
     this.io.emit('state', {
       state: this.innerState.state,
       players: Object.keys(this.players).map(k => ({
@@ -189,11 +196,6 @@ class Game {
         color: o.color
       }))
     });
-
-    //   this.shouldSendUpdate = false;
-    // } else {
-    //   this.shouldSendUpdate = true;
-    // }
   }
 }
 

@@ -2,7 +2,7 @@
   "name": "tron",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,9 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "javascript-state-machine": "^3.1.0",
     "socket.io": "^2.2.0"
   },
-  "devDependencies": {
-    "javascript-state-machine": "^3.1.0"
-  }
+  "devDependencies": {}
 }
