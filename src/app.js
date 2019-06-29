@@ -1,13 +1,21 @@
-const app = require('express')();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const path = require('path');
+const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
+
 const Game = require('./entities/Game');
 
+const app = express();
+const server = http.Server(app);
+const io = socketIO(server);
+
+app.use('/static', express.static(__dirname + '/static'));
+
 app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/static/index.html');
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-http.listen(3000, () => {
+server.listen(3000, () => {
   console.log('listening on *:3000');
 });
 
