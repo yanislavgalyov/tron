@@ -47,7 +47,7 @@ class Game {
       }
     });
 
-    setInterval(this.update.bind(this), 100);
+    setInterval(this.update.bind(this), 50);
   }
 
   generateColor() {
